@@ -5,7 +5,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define PEAK_THRESHOLD 20000
+#define PEAK_THRESHOLD 40000
 #define PREAMBLE_LENGTH 8
 #define DATA_LENGTH 112
 
@@ -97,6 +97,8 @@ void process_file(const char* path)
         uint16_t first, second;
         int errors = 0;
         int j;
+        int bit = 0;
+        uint8_t bytes[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
         
         for (j = 0; j < DATA_LENGTH*2; j+=2)
         {
@@ -105,19 +107,29 @@ void process_file(const char* path)
             
             if (first < second)
             {
-                printf("0");
+                bit = 0;
             }
             else if (first > second)
             {
-                printf("1");
+                bit = 1;
             }
             else
             {
-                printf("?");
                 errors++;
+                // use previous bit if the amplitudes are equal
             }
+            
+            // place bit into the byte array
+            bytes[j/2/8] = bytes[j/2/8] | (bit << (8 - (j/2 % 8) - 1));
+            
         }
         
+        // print out the decoded message
+        int c;
+        for (c = 0; c < 14; c++)
+        {
+            printf("%02x", bytes[c]);
+        }
         total++;
         printf(" peak_avg: %d errors: %d", peak_avg, errors);
         printf("\n");
